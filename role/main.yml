@@ -1,0 +1,114 @@
+---
+- name: kubernetes setup
+  hosts: k2
+
+#  vars_files:
+#    - ../group_vars/domain.com.yml
+#    - ../group_vars/global.vars.yml
+  vars:
+    dockerinstall: 0
+
+  tasks:
+
+  - name: Install packages to allow apt to use a repository over HTTPS
+    apt: name={{item}} state=installed
+    with_items:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+    when: ansible_distribution == 'Ubuntu' and dockerinstall == 1
+    become: yes
+  - name: Add docker repo key
+    apt_key: url="https://download.docker.com/linux/ubuntu/gpg" state=present
+    when: ansible_distribution == 'Ubuntu' and dockerinstall == 1
+    become: yes
+  - name: Add docker repo
+    apt_repository: repo='deb [arch=amd64] https://download.docker.com/linux/ubuntu xenial stable' state=present
+    when: ansible_distribution == 'Ubuntu' and dockerinstall == 1
+    become: yes
+  - name: docker-ce docker-ce-cli
+    apt:
+      name: docker-ce=18.06.0~ce~3-0~ubuntu
+      state: installed
+    when: ansible_distribution == 'Ubuntu' and dockerinstall == 1
+    become: yes
+  - name: Install docker-compose
+    get_url:
+      url: https://github.com/docker/compose/releases/download/1.22.0-rc1/docker-compose-Linux-x86_64
+      dest: /usr/local/bin/docker-compose
+      mode: 0770
+    when: ansible_distribution == 'Ubuntu' and dockerinstall == 1
+    become: yes
+
+  - name: Remove swapfile from /etc/fstab
+    lineinfile:
+      dest: /etc/fstab
+      regexp: '^/swap.img'
+      state: absent
+    become: yes
+  - name: Disable swap
+    command: swapoff -a
+    become: yes
+
+  - name: install dependences Ubuntu
+    apt: name=apt-transport-https state=installed
+    when: ansible_distribution == 'Ubuntu'
+    become: yes
+
+  - name: Add an Apt signing key for Ubuntu
+    apt_key:
+      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+      state: present
+    when: ansible_distribution == 'Ubuntu'
+    become: yes
+  - name: Add an Rpm signing key for Centos
+    rpm_key:
+      state: present
+      key: https://packages.cloud.google.com/yum/doc/yum-key.gpg
+    when: ansible_distribution == 'CentOS'
+    become: yes
+
+  - name: Add kubernetes repo for Ubuntu
+    apt_repository:
+      repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+    when: ansible_distribution == 'Ubuntu'
+    become: yes
+#  - name: Add Kubernetes repo for Centos
+#    yum_repository:
+#      name: kubernetes
+#      description: kubernetes repo
+#      file: kubernetes.repo
+#      baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64
+##      enabled: yes
+#      gpgcheck: no
+#    when: ansible_distribution == 'CentOS'
+#    become: yes
+
+  - name: Install Kubernetes Ubuntu
+    apt: name={{item}} state=installed
+    with_items:
+      - kubelet
+      - kubeadm
+      - kubernetes-cni
+    when: ansible_distribution == 'Ubuntu'
+    become: yes
+  - name: Install Kubernetes Centos
+    yum: name={{item}} state=installed
+    with_items:
+      - kubelet
+      - kubeadm
+      - kubectl
+    when: ansible_distribution == 'CentOS'
+    become: yes
+
+  - name: Join machines
+    command: kubeadm join 192.168.27.177:6443 --token qhta4r.z6yar78aexe4bxwo --discovery-token-ca-cert-hash sha256:502a8021a0230e5b3897c182e2579014e5ff6ea4d9371caf137c86fa9bfa8805
+    become: yes
+
+#  - name: Install ceph
+#    apt: name={{item}} state=installed update_cache=yes
+#    with_items:
+#      - ceph-deploy
+#      - ceph-common
+#    become: true
