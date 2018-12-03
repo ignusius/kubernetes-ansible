@@ -1,6 +1,6 @@
 ---
 - name: kubernetes setup
-  hosts: k2
+  hosts: all
 
 #  vars_files:
 #    - ../group_vars/domain.com.yml
@@ -41,39 +41,39 @@
     when: ansible_distribution == 'Ubuntu' and dockerinstall == 1
     become: yes
 
-  - name: Remove swapfile from /etc/fstab
-    lineinfile:
-      dest: /etc/fstab
-      regexp: '^/swap.img'
-      state: absent
-    become: yes
-  - name: Disable swap
-    command: swapoff -a
-    become: yes
+#  - name: Remove swapfile from /etc/fstab
+#    lineinfile:
+#      dest: /etc/fstab
+#      regexp: '^/swap.img'
+#      state: absent
+#    become: yes
+#  - name: Disable swap
+#    command: swapoff -a
+#    become: yes
 
-  - name: install dependences Ubuntu
-    apt: name=apt-transport-https state=installed
-    when: ansible_distribution == 'Ubuntu'
-    become: yes
+#  - name: install dependences Ubuntu
+#    apt: name=apt-transport-https state=installed
+#    when: ansible_distribution == 'Ubuntu'
+#    become: yes
 
-  - name: Add an Apt signing key for Ubuntu
-    apt_key:
-      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-      state: present
-    when: ansible_distribution == 'Ubuntu'
-    become: yes
-  - name: Add an Rpm signing key for Centos
-    rpm_key:
-      state: present
-      key: https://packages.cloud.google.com/yum/doc/yum-key.gpg
-    when: ansible_distribution == 'CentOS'
-    become: yes
+#  - name: Add an Apt signing key for Ubuntu
+#    apt_key:
+#      url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+#      state: present
+#    when: ansible_distribution == 'Ubuntu'
+#    become: yes
+#  - name: Add an Rpm signing key for Centos
+#    rpm_key:
+#      state: present
+#      key: https://packages.cloud.google.com/yum/doc/yum-key.gpg
+#    when: ansible_distribution == 'CentOS'
+#    become: yes
 
-  - name: Add kubernetes repo for Ubuntu
-    apt_repository:
-      repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
-    when: ansible_distribution == 'Ubuntu'
-    become: yes
+#  - name: Add kubernetes repo for Ubuntu
+#    apt_repository:
+#      repo: "deb http://apt.kubernetes.io/ kubernetes-xenial main"
+#    when: ansible_distribution == 'Ubuntu'
+#    become: yes
 #  - name: Add Kubernetes repo for Centos
 #    yum_repository:
 #      name: kubernetes
@@ -85,25 +85,57 @@
 #    when: ansible_distribution == 'CentOS'
 #    become: yes
 
-  - name: Install Kubernetes Ubuntu
-    apt: name={{item}} state=installed
-    with_items:
-      - kubelet
-      - kubeadm
-      - kubernetes-cni
-    when: ansible_distribution == 'Ubuntu'
-    become: yes
-  - name: Install Kubernetes Centos
-    yum: name={{item}} state=installed
-    with_items:
-      - kubelet
-      - kubeadm
-      - kubectl
-    when: ansible_distribution == 'CentOS'
+#  - name: Install Kubernetes Ubuntu
+#    apt: name={{item}} state=installed
+#    with_items:
+#      - kubelet
+#      - kubeadm
+#      - kubernetes-cni
+#    when: ansible_distribution == 'Ubuntu'
+#    become: yes
+#  - name: Install Kubernetes Centos
+#    yum: name={{item}} state=installed
+#    with_items:
+#      - kubelet
+#      - kubeadm
+#      - kubectl
+#    when: ansible_distribution == 'CentOS'
+#    become: yes
+
+#  - name: Initialize k8s
+#    command: kubeadm init --pod-network-cidr=10.244.0.0/16
+#    when: "'masters' in group_names "
+#    become: yes
+
+  - name: Get Kubernetes join token
+    command: kubeadm token create --print-join-command
+    register: join_token
+    when: ansible_hostname == 'k1'
+#    when: "'k1' in group_names "
     become: yes
 
+  - name: Print Token
+    debug:
+      var: join_token.stdout_lines
+
+#  - name: test
+#    debug: msg="{{ hostvars['']['ansible_hostname'] }}"
+#    debug: var=hostvars['192.168.27.177'].join_token.stdout
+#    when: "'node' in group_names "
+#    become: yes
+
+#  - name: Join new nodes
+#    lineinfile:
+#      dest: /tmp/test
+#      create: yes
+#      line: "{{ hostvars['192.168.27.177'].join_token.stdout }}"
+#      state: present
+#    when: "'nodes' in group_names "
+#    become: yes
+
   - name: Join machines
-    command: kubeadm join 192.168.27.177:6443 --token qhta4r.z6yar78aexe4bxwo --discovery-token-ca-cert-hash sha256:502a8021a0230e5b3897c182e2579014e5ff6ea4d9371caf137c86fa9bfa8805
+    command: "{{ hostvars['192.168.27.177'].join_token.stdout }}"
+    when: "'nodes' in group_names "
     become: yes
 
 #  - name: Install ceph
