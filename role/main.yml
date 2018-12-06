@@ -107,16 +107,16 @@
 #    when: "'masters' in group_names "
 #    become: yes
 
-  - name: Get Kubernetes join token
-    command: kubeadm token create --print-join-command
-    register: join_token
-    when: ansible_hostname == 'k1'
-#    when: "'k1' in group_names "
-    become: yes
+#  - name: Get Kubernetes join token
+#    command: kubeadm token create --print-join-command
+#    register: join_token
+#    when: ansible_hostname == 'k1'
+##    when: "'k1' in group_names "
+#    become: yes
 
-  - name: Print Token
-    debug:
-      var: join_token.stdout_lines
+#  - name: Print Token
+#    debug:
+#      var: join_token.stdout_lines
 
 #  - name: test
 #    debug: msg="{{ hostvars['']['ansible_hostname'] }}"
@@ -133,10 +133,98 @@
 #    when: "'nodes' in group_names "
 #    become: yes
 
-  - name: Join machines
-    command: "{{ hostvars['192.168.27.177'].join_token.stdout }}"
-    when: "'nodes' in group_names "
+#  - name: Join machines
+#    command: "{{ hostvars['192.168.27.177'].join_token.stdout }}"
+#    when: "'nodes' in group_names "
+#    become: yes
+
+#  - name: Add user kube
+#    user:
+#      name: kube
+#      shell: /bin/bash
+#      groups: sudo
+#      password: $6$fGkF5fV7W$auo0o9NaeKDtcZzwJTT2lr2dDGRHU1PvgnRffRwh8wpE2NSmoBI5PNfrK.GD930f01Vb5oX68IfW2lTBxBSAn0
+#    become: yes
+#    when: ansible_distribution == 'Ubuntu' and "'master' in group_names "
+## mkpasswd --method=sha-512
+## password is Qwerty123
+#  - name: Creates .kube directory in homedir
+#    file:
+#      state: directory
+#      path: /home/kube/.kube
+#      mode: 0644
+#      owner: kube
+#      group: kube
+#    when: ansible_hostname == 'k1'
+#    become: yes
+##    when: "'master' in group_names "
+#  - name: Copy config file to new user dir
+#    copy:
+#      src: /etc/kubernetes/admin.conf
+#      dest: /home/kube/.kube/config
+#      remote_src: yes
+#      owner: kube
+#      group: kube
+#      mode: 0644
+#    when: ansible_hostname == 'k1'
+#    become: yes
+##    when: "'master' in group_names "
+#  - name: Add path to config to bashrc
+#    lineinfile:
+#      dest: /home/kube/.bashrc
+#      line: "export KUBECONFIG=$HOME/.kube/config"
+#      state: present
+#    when: ansible_hostname == 'k1'
+#    become: yes
+
+
+#  - name: Some
+#    command: kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
+#    when: ansible_hostname == 'k1'
+#    become: yes
+#    become_user: kube
+#  - name: Install flannel
+#    command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+#    when: ansible_hostname == 'k1'
+#    become: yes
+#    become_user: kube
+
+#  - name: Install Kubernetes Dashboard
+#    command: kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/master/src/deploy/recommended/kubernetes-dashboard.yaml
+#    when: ansible_hostname == 'k1'
+#    become: yes
+#    become_user: kube
+#  - name: Create user for Dashboard
+#    blockinfile:
+#      dest: /home/kube/.kube/account.yaml
+#      create: yes
+#      block: |
+#          apiVersion: v1
+#          kind: ServiceAccount
+#          metadata:
+#            name: admin-user
+#            namespace: kube-system
+#          ---
+#          apiVersion: rbac.authorization.k8s.io/v1beta1
+#          kind: ClusterRoleBinding
+#          metadata:
+#            name: admin-user
+#          roleRef:
+#            apiGroup: rbac.authorization.k8s.io
+#            kind: ClusterRole
+#            name: cluster-admin
+#          subjects:
+#          - kind: ServiceAccount
+#            name: admin-user
+#            namespace: kube-system
+#      marker: ''
+#    when: ansible_hostname == 'k1'
+#    become: yes
+#    become_user: kube
+  - name: Apply the full admin privileges to dashboard service account using the dashboard-admin YAML file
+    command: kubectl -n kube-system create -f /home/kube/.kube/account.yaml
     become: yes
+    become_user: kube
 
 #  - name: Install ceph
 #    apt: name={{item}} state=installed update_cache=yes
