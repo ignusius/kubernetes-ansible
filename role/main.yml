@@ -221,10 +221,13 @@
 #    when: ansible_hostname == 'k1'
 #    become: yes
 #    become_user: kube
-  - name: Apply the full admin privileges to dashboard service account using the dashboard-admin YAML file
-    command: kubectl -n kube-system create -f /home/kube/.kube/account.yaml
-    become: yes
-    become_user: kube
+#  - name: Apply the full admin privileges to dashboard service account using the dashboard-admin YAML file
+#    command: kubectl -n kube-system create -f /home/kube/.kube/account.yaml
+#    become: yes
+#    become_user: kube
+
+  - name: Install NFS
+    import_tasks: nfs.yml
 
 #  - name: Install ceph
 #    apt: name={{item}} state=installed update_cache=yes

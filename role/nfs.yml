@@ -1,0 +1,48 @@
+#  - name: Create mountable dir
+#    file: path=/share state=directory mode=777 owner=root group=root
+#    when: ansible_hostname == 'k1'
+#    become: yes
+
+#  - name: make sure the mount drive has a filesystem
+#    filesystem: fstype=ext4 dev={{ mountable_share_drive | default('/dev/xvdb') }}
+#    when: ansible_hostname == 'k1'
+#    become: yes
+
+#  - name: set mountpoints
+#    mount: name=/share src={{ mountable_share_drive | default('/dev/xvdb') }} fstype=auto opts=defaults,nobootwait dump=0 passno=2 state=mounted
+#    when: ansible_hostname == 'k1'
+#    become: yes
+
+  - name: Ensure NFS utilities are installed.
+    apt: name={{ item }} state=installed update_cache=yes
+    with_items:
+      - nfs-common
+      - nfs-kernel-server
+    when: ansible_hostname == 'k1'
+    become: yes
+
+  - name: copy /etc/exports
+    template: src=exports.j2 dest=/etc/exports owner=root group=root
+    when: ansible_hostname == 'k1'
+    become: yes
+
+  - name: restart nfs server
+    service: name=nfs-kernel-server state=restarted
+    when: ansible_hostname == 'k1'
+    become: yes
+
+  - name: Ensure NFS common is installed.
+    apt: name=nfs-common state=installed update_cache=yes
+    when: "'nodes' in group_names "
+    become: yes
+
+  - name: Create mountable dir
+    file: path=/nfs state=directory mode=777 owner=root group=root
+    when: "'nodes' in group_names "
+    become: yes
+
+  - name: Set mountpoints
+    mount: name=/nfs src=192.168.27.177:/nfs fstype=nfs opts=defaults,nobootwait dump=0 passno=2 state=mounted
+    when: "'nodes' in group_names "
+    become: yes
+
