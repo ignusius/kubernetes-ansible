@@ -42,7 +42,7 @@
     become: yes
 
   - name: Set mountpoints
-    mount: name=/nfs src=192.168.27.177:/nfs fstype=nfs opts=defaults,nobootwait dump=0 passno=2 state=mounted
+    mount: name=/nfs src=192.168.27.177:/nfs fstype=nfs opts=defaults dump=0 passno=0 state=mounted
     when: "'nodes' in group_names "
     become: yes
 

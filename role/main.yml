@@ -226,8 +226,14 @@
 #    become: yes
 #    become_user: kube
 
-  - name: Install NFS
-    import_tasks: nfs.yml
+#  - name: Install NFS
+#    import_tasks: nfs.yml
+
+#  - name: Create the PersistentVolume and PersistentVolumeClaim
+#    import_tasks: k8s.yml
+
+  - name: Niginx test
+    import_tasks: nginx.yml
 
 #  - name: Install ceph
 #    apt: name={{item}} state=installed update_cache=yes

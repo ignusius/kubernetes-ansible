@@ -1,0 +1,11 @@
+  - name: copy nginx-deployment-service.yaml
+    copy: src=./k8s/nginx-deployment-service.yaml dest=/tmp
+    when: ansible_hostname == 'k1'
+    become: yes
+
+  - name: Create Service
+    command: kubectl create -f /tmp/nginx-deployment-service.yaml
+    when: ansible_hostname == 'k1'
+    become: yes
+    become_user: kube
+

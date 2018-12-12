@@ -1,0 +1,22 @@
+  - name: copy pv-volume.yaml
+    copy: src=./k8s/pv-volume.yaml dest=/tmp
+    when: ansible_hostname == 'k1'
+    become: yes
+
+  - name: copy pv-claim.yaml
+    copy: src=./k8s/pv-claim.yaml dest=/tmp
+    when: ansible_hostname == 'k1'
+    become: yes
+
+  - name: Create the PersistentVolume
+    command: kubectl create -f /tmp/pv-volume.yaml
+    when: ansible_hostname == 'k1'
+    become: yes
+    become_user: kube
+
+  - name: Create the PersistentVolumeClaim
+    command: kubectl create -f /tmp/pv-claim.yaml
+    when: ansible_hostname == 'k1'
+    become: yes
+    become_user: kube
+
